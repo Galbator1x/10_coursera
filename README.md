@@ -1,8 +1,9 @@
 10_coursera
 ===========
 
-This script takes the information about all the courses on Coursera.org 
-and saves them to xlsx.
+This script takes the information (title, language, start date, 
+weeks count, rating) about all the courses on Coursera.org and saves 
+them to xlsx.
 
 Usage
 -----
