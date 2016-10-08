@@ -8,6 +8,7 @@ from openpyxl import Workbook
 
 
 COURSES_XML_URL = 'https://www.coursera.org/sitemap~www~courses.xml'
+QUANTITY_COURSES_TO_OUTPUT = 20
 
 
 def get_courses_list():
@@ -17,7 +18,7 @@ def get_courses_list():
     courses_urls = [url[0].text for url in root]
 
     courses_list = []
-    for url in courses_urls[1:6]:
+    for url in courses_urls[:QUANTITY_COURSES_TO_OUTPUT]:
         course = get_course_info(url)
         if course is not None:
             courses_list.append(course)
@@ -46,10 +47,10 @@ def get_course_info(course_slug):
 
     weeks_count = len(soup.find_all('div', class_='week'))
 
-    rating = re.findall(r'Average User Rating ([\d\.]+)', course_html)
-    rating = rating[0] if rating else 0
+    rating = soup.find('div', class_='ratings-text')
+    rating = re.findall(r'\d\.\d', rating.text)[0] if rating is not None else None
 
-    return [title.text, language, start_date, weeks_count, rating]
+    return title.text, language, start_date, weeks_count, rating
 
 
 def save_courses_info_to_xlsx(courses_list, filepath):
@@ -62,4 +63,7 @@ def save_courses_info_to_xlsx(courses_list, filepath):
 
 if __name__ == '__main__':
     filepath = 'courses.xlsx'
-    save_courses_info_to_xlsx(get_courses_list(), filepath)
+    try:
+        save_courses_info_to_xlsx(get_courses_list(), filepath)
+    except requests.exceptions.ConnectionError:
+        print('Connection aborted, try later.')
