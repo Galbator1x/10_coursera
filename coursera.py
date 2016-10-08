@@ -2,7 +2,7 @@ import requests
 import re
 import io
 
-from lxml import etree
+from lxml import etree, html
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 
@@ -28,17 +28,21 @@ def get_courses_list():
 def get_course_info(course_slug):
     course_html = requests.get(course_slug).text
     soup = BeautifulSoup(course_html, 'html.parser')
+    tree = html.fromstring(course_html)
 
     title = soup.find('div', class_='display-3-text')
     if title is None:
         return None
 
-    regex_lang = re.compile(r"""overview\.1\.6\.0\.0\.3\.1\.0\.0"> # sequence of characters before course language
-                                ([\w\d\s\(\)]+)  # course language
-                                </span>  # tag after a course language
-                             """, re.VERBOSE)
-    language = re.findall(regex_lang, course_html)
-    language = language[0] if language else 'missing'
+    language = 'missing'
+    rows = len(tree.xpath('//*[@id=" "]/div/div[5]/table/tbody/tr'))
+    for row in range(1, rows + 1):
+        row_title = tree.xpath('//*[@id=" "]/div/div[5]/table/tbody/tr[{}]/td[1]/span/text()'.
+                               format(str(row)))[0]
+        if row_title == 'Language':
+            language = tree.xpath('//*[@id=" "]/div/div[5]/table/tbody/tr[{}]/td[2]/span/span/text()'.
+                                  format(str(row)))[0]
+            break
 
     start_date = re.findall(r'"plannedLaunchDate":"([\w\d\s\.,-]+)"', course_html)
     if not start_date:
