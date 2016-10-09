@@ -29,21 +29,22 @@ def get_courses_list():
 def get_course_info(course_slug):
     course_html = requests.get(course_slug).text
     soup = BeautifulSoup(course_html, 'html.parser')
-    tree = html.fromstring(course_html)
 
     title = soup.find('div', class_='display-3-text')
     if title is None:
         return None
 
     language = 'missing'
-    rows = len(tree.xpath('//*[@id=" "]/div/div[5]/table/tbody/tr'))
-    for row in range(1, rows + 1):
-        row_title = tree.xpath('//*[@id=" "]/div/div[5]/table/tbody/tr[{}]/td[1]/span/text()'.
-                               format(str(row)))[0]
-        if row_title == 'Language':
-            language = tree.xpath('//*[@id=" "]/div/div[5]/table/tbody/tr[{}]/td[2]/span/span/text()'.
-                                  format(str(row)))[0]
-            break
+    table = soup.find('table', class_='basic-info-table')
+    td_list = table.find_all('td')
+    for td_id, td in enumerate(td_list):
+        try:
+            if td.find('span').text == 'Language':
+                language = re.findall(r'[\w\d\s\(\)]+',
+                                      td_list[td_id + 1].find('span').text)[0]
+                break
+        except AttributeError:
+            pass
 
     try:
         data_from_script = soup.select('script[type="application/ld+json"]')[0].text
@@ -57,6 +58,7 @@ def get_course_info(course_slug):
 
     rating = soup.find('div', class_='ratings-text')
     rating = re.findall(r'\d\.\d', rating.text)[0] if rating is not None else None
+
     return title.text, language, start_date, weeks_count, rating
 
 
