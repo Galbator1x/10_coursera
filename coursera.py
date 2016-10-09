@@ -1,6 +1,7 @@
 import requests
 import re
 import io
+import json
 
 from lxml import etree, html
 from bs4 import BeautifulSoup
@@ -44,16 +45,18 @@ def get_course_info(course_slug):
                                   format(str(row)))[0]
             break
 
-    start_date = re.findall(r'"plannedLaunchDate":"([\w\d\s\.,-]+)"', course_html)
-    if not start_date:
-        start_date = re.findall(r'"startDate":"([\w\d\s\.,-]+)"', course_html)
-    start_date = start_date[0] if start_date else 'missing'
+    try:
+        data_from_script = soup.select('script[type="application/ld+json"]')[0].text
+        data_json = json.loads(data_from_script)
+        start_date = data_json['hasCourseInstance'][0]['startDate']
+    except (KeyError, IndexError):
+        start_date = 'missing'
 
     weeks_count = len(soup.find_all('div', class_='week'))
+    weeks_count = 'missing' if weeks_count == 0 else weeks_count
 
     rating = soup.find('div', class_='ratings-text')
     rating = re.findall(r'\d\.\d', rating.text)[0] if rating is not None else None
-
     return title.text, language, start_date, weeks_count, rating
 
 
