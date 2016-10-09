@@ -3,7 +3,7 @@ import re
 import io
 import json
 
-from lxml import etree, html
+from lxml import etree
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 
